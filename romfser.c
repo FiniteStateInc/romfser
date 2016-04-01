@@ -177,7 +177,7 @@ int	main(argc, argv)
 		error("Not recognized as ROMFS\n");
 	}
 
-	next = ALIGNUP16(16+(strlen((addrptr+16))+1));	/*	first node	*/
+	next = ALIGNUP16(16+(strlen((addrptr+16))));	/*	first node	*/
 
 	PRINT_START;
 	print_inode("/", next, next);
@@ -260,16 +260,16 @@ int	extract_inode(struct func_desc *func, struct romfs_file *file)
 	}
 	else
 	{
-		if ((filefd = open(fpath, O_CREAT|O_WRONLY)) == -1)
+		if ((filefd = open(fpath, O_CREAT|O_WRONLY|O_TRUNC, 0600)) == -1)
 		{
-			if ((filefd = open(file->name, O_CREAT|O_WRONLY)) == -1)
+			if ((filefd = open(file->name, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR)) == -1)
 			{
 				perror("open");
 				return	-1;
 			}
 		}
 
-		writeptr = (char*)((char*)file + sizeof(struct romfs_file)+ALIGNUP16(strlen(file->name))+1);
+		writeptr = (char*)((char*)file + sizeof(struct romfs_file)+ALIGNUP16(strlen(file->name)));
 		size = htonl(file->size);
 
 		if (write(filefd, writeptr, size) == -1)
@@ -299,7 +299,7 @@ int	sub_inode(struct func_desc *func, struct romfs_file *file)
 		return	-1;
 	}
 
-	writeptr = (char*)((char*)file + sizeof(struct romfs_file)+ALIGNUP16(strlen(file->name))+1);
+	writeptr = (char*)((char*)file + sizeof(struct romfs_file)+ALIGNUP16(strlen(file->name)));
 	readsiz = htonl(file->size)<READ_BLOCK ? htonl(file->size) : READ_BLOCK;
 
 	for(i=0;i<htonl(file->size);i+=READ_BLOCK)
@@ -309,7 +309,7 @@ int	sub_inode(struct func_desc *func, struct romfs_file *file)
 		writeptr+=readsiz;
 	}
 
-	if (msync(file, htonl(file->size)+sizeof(struct romfs_file)+ALIGNUP16(strlen(file->name))+1, MS_SYNC) == -1)
+	if (msync(file, htonl(file->size)+sizeof(struct romfs_file)+ALIGNUP16(strlen(file->name)), MS_SYNC) == -1)
 	{
 		perror("msync");
 		return	-1;
@@ -360,4 +360,3 @@ size_t my_strlcpy(char *d, char *s, size_t len)
 
 	return cnt;
 }
-
